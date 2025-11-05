@@ -18,6 +18,10 @@ app.post('/create-payment-intent', async (req, res) => {
   try {
     const { guests, date, start, end, packageType, total } = req.body;
 
+    if (!guests || !date || !start || !end || !packageType || !total) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    };
+
     const session = await Stripe.Checkout.SessionsResource.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -29,13 +33,21 @@ app.post('/create-payment-intent', async (req, res) => {
               name: `${packageType} Package`,
               description: `Booking for ${guests} guests on ${date} from ${start} to ${end}`,
             },
-            unit_amount: total * 100,
+            unit_amount: Math.round(total * 100),
           },
           quantity: 1,
         },
       ],
-      success_url: 'https://yourdomain.com/success',
-      cancel_url: 'https://yourdomain.com/cancel',
+      success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+      metadata: {
+        guests,
+        date,
+        start,
+        end,
+        packageType,
+        total
+      },
     });
 
     res.json({ url: session.url });
