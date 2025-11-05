@@ -10,6 +10,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.send('Party Time Backend is running');
+})
+
 app.post('/create-payment-intent', async (req, res) => {
   try {
     const { guests, date, start, end, packageType, total } = req.body;
