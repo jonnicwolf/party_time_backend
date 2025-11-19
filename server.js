@@ -6,8 +6,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-04-10' });
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+}));
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -16,13 +20,24 @@ app.get('/', (req, res) => {
 
 app.post('/create-payment-intent', async (req, res) => {
   try {
-    const { guests, date, start, end, packageType, total } = req.body;
+    const {
+       guests,
+      bookingDate,
+      venueName,
+      price,
+      phone,
+      total,
+      packageType,
+      date,
+      start,
+      end,
+    } = req.body;
 
-    if (!guests || !date || !start || !end || !packageType || !total) {
+    if (!guests || !bookingDate || !price || !venueName || !total) {
       return res.status(400).json({ error: 'Missing required fields' });
     };
 
-    const session = await Stripe.Checkout.SessionsResource.create({
+    const session = await stripe.Checkout.SessionsResource.create({
       payment_method_types: ['card'],
       mode: 'payment',
       line_items: [
